@@ -1,17 +1,34 @@
+﻿using RestaurantManagementSystem;
 using System;
 using System.Collections.Generic;
-namespace OrderClass
+
+namespace RestaurantManagementSystem
 {
-    class Order
+    public class Order
     {
-        public int OrderID { get; set; }
-        public int TableID { get; set; }
+        public class OrderItem
+        {
+            public Dish Dish { get; set; }
+            public int Quantity { get; set; }
+            public OrderItem(Dish dish, int quantity)
+            {
+                Dish = dish ?? throw new ArgumentNullException(nameof(dish));
+                if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Количество должно быть больше 0.");
+                Quantity = quantity;
+            }
+            public decimal TotalPrice => Dish.Price * Quantity;
+        }
+        public int OrderId { get; set; }
+        public int TableId { get; set; }
         public List<OrderItem> OrderItems { get; set; }
         public string Comment { get; set; }
         public DateTime CreatedAt { get; set; }
         public int WaiterId { get; set; }
         public decimal TotalCost { get; set; }
-        public bool isClosed { get; set; }
+        public bool IsClosed { get; set; }
+        public DateTime? ClosedAt { get; private set; }
+
+
         public Order(int orderId, int tableId, int waiterId, string comment = "")
         {
             OrderId = orderId;
@@ -37,7 +54,7 @@ namespace OrderClass
         public void AddDish(Dish dish, int quantity = 1)
         {
             // Проверить, есть ли уже такое блюдо в заказе
-            var existingItem = OrderItems.FirstOrDefault(d => d.Dish.Id == dish.Id);
+            var existingItem = OrderItems.FirstOrDefault(d => d.Dish.ID == dish.ID);
             if (existingItem != null)
             {
                 existingItem.Quantity += quantity;
@@ -52,7 +69,7 @@ namespace OrderClass
         // Удалить блюдо из заказа
         public void RemoveDish(int dishId, int quantity = 1)
         {
-            var item = OrderItems.FirstOrDefault(d => d.Dish.Id == dishId);
+            var item = OrderItems.FirstOrDefault(d => d.Dish.ID == dishId);
             if (item != null)
             {
                 if (item.Quantity <= quantity)
@@ -144,9 +161,9 @@ namespace OrderClass
         // Получить количество конкретного блюда в заказе
         public int GetDishQuantity(int dishId)
         {
-            var item = OrderItems.FirstOrDefault(d => d.Dish.Id == dishId);
+            var item = OrderItems.FirstOrDefault(d => d.Dish.ID == dishId);
             return item?.Quantity ?? 0;
         }
     }
 }
-    //а тут просто мяу
+//а тут просто мяу

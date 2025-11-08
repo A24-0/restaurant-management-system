@@ -1,3 +1,4 @@
+﻿using RestaurantManagementSystem;
 using System;
 using System.Collections.Generic;
 
@@ -18,6 +19,15 @@ namespace RestaurantManagementSystem
             Seats = seats;
             Schedule = new Dictionary<string, Booking>();
             InitializeSchedule();
+        }
+
+        public static List<Table> Tables { get; private set; } = new List<Table>();
+
+        // Инициализация столов
+        public static void InitializeTables(Table[] tables)
+        {
+            Tables.Clear();
+            Tables.AddRange(tables);
         }
 
         // Инициализация расписания (9:00-18:00+)
