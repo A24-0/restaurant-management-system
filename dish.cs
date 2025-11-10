@@ -60,14 +60,19 @@ namespace RestaurantManagementSystem
         //показать инфу
         public void ShowInfo()
         {
-            Console.WriteLine($"ID заказа: {ID}");
-            Console.WriteLine($"Название: {Name}");
-            Console.WriteLine($"Вес: {Weight}");
-            Console.WriteLine($"Цена:{Price}");
-            Console.WriteLine($"Категория: {Category}");
-            Console.WriteLine($"Время приготовления : {CookingTime}");
-            Console.WriteLine($"Типы: {string.Join(",", Types)}");
-            Console.WriteLine("------------------------");
+            ConsoleTheme.DrawCard(
+                $"Блюдо {ID:00}",
+                new[]
+                {
+                    $"Название: {Name}",
+                    $"Состав: {Compostion}",
+                    $"Вес: {Weight}",
+                    $"Цена: {Price}",
+                    $"Категория: {Category}",
+                    $"Время приготовления: {CookingTime} минут",
+                    $"Типы: {string.Join(", ", Types)}"
+                },
+                ConsoleColor.DarkGreen);
         }
 
         //Удалить заказ

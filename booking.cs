@@ -119,32 +119,40 @@ namespace RestaurantManagementSystem
             Table?.RemoveBooking(this);
             if (_bookings.Remove(this))
             {
-                Console.WriteLine($"Бронь клиента '{ClientName}' отменена.");
+                ConsoleTheme.WriteSuccess($"Бронь клиента '{ClientName}' отменена.");
             }
             else
             {
-                Console.WriteLine($"Бронь '{ClientName}' не найдена в списке активных (возможно, уже отменена).");
+                ConsoleTheme.WriteWarning($"Бронь '{ClientName}' не найдена в списке активных (возможно, уже отменена).");
             }
         }
 
         public static void DisplayAllBookings()
         {
-            Console.WriteLine("\nАктивные бронирования:");
+            ConsoleTheme.PrintMenuHeader("Активные бронирования");
             if (!_bookings.Any())
             {
-                Console.WriteLine("Нет активных бронирований.");
+                ConsoleTheme.WriteInfo("Нет активных бронирований.");
                 return;
             }
-            foreach (var b in _bookings)
+
+            foreach (var booking in _bookings.OrderBy(b => b.TimeStart))
             {
-                string tableInfo = b.Table != null
-                    ? $"{b.Table.ID} ({b.Table.Location})"
-                    : "—";
-                Console.WriteLine(
-                    $"• {b.ClientName} | Тел: {b.Phone} | Стол {tableInfo} | " +
-                    $"{b.TimeStart:dd.MM HH:mm} – {b.TimeEnd:HH:mm} | {b.Comment}");
+                string tableInfo = booking.Table != null
+                    ? $"{booking.Table.ID:00} ({booking.Table.Location})"
+                    : "Не назначен";
+
+                var lines = new List<string>
+                {
+                    $"Клиент: {booking.ClientName}",
+                    $"Телефон: {booking.Phone}",
+                    $"Стол: {tableInfo}",
+                    $"Время: {booking.TimeStart:dd.MM HH:mm} – {booking.TimeEnd:HH:mm}",
+                    $"Комментарий: {(string.IsNullOrWhiteSpace(booking.Comment) ? "—" : booking.Comment)}"
+                };
+
+                ConsoleTheme.DrawCard($"Бронь #{booking.ClientId}", lines, ConsoleColor.DarkMagenta);
             }
-            Console.WriteLine();
         }
         public static List<Booking> GetAllBookings() => new List<Booking>(_bookings);
     }
