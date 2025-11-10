@@ -57,7 +57,7 @@ namespace RestaurantManagementSystem
             Table?.RemoveBooking(this);
             if (_bookings.Remove(this))
             {
-                
+
             }
             else
             {
@@ -155,5 +155,37 @@ namespace RestaurantManagementSystem
             }
         }
         public static List<Booking> GetAllBookings() => new List<Booking>(_bookings);
+
+        // Проверка наличия активной брони на столике в текущее время
+        public static bool HasActiveBookingForTable(int tableId)
+        {
+            DateTime now = DateTime.Now;
+            foreach (var booking in _bookings)
+            {
+                if (booking.Table.ID == tableId &&
+                    booking.TimeStart <= now &&
+                    booking.TimeEnd > now)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Получить активную бронь для столика (если есть)
+        public static Booking GetActiveBookingForTable(int tableId)
+        {
+            DateTime now = DateTime.Now;
+            foreach (var booking in _bookings)
+            {
+                if (booking.Table.ID == tableId &&
+                    booking.TimeStart <= now &&
+                    booking.TimeEnd > now)
+                {
+                    return booking;
+                }
+            }
+            return null;
+        }
     }
 }
