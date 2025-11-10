@@ -355,7 +355,7 @@ namespace RestaurantManagementSystem
             int newSeats = SafeParse(Console.ReadLine());
 
             Table table = Array.Find(AvailableTables, t => t.ID == tableId);
-            
+
             if (table != null)
             {
                 bool success = table.UpdateTable(newLocation, newSeats);
@@ -688,6 +688,25 @@ namespace RestaurantManagementSystem
                 ConsoleTheme.WriteWarning($"Столик с ID {tableId} не найден.");
                 return;
             }
+
+            // Проверка наличия активной брони на столик
+            if (!Booking.HasActiveBookingForTable(tableId))
+            {
+                ConsoleTheme.WriteError("❌ Нельзя создать заказ: на столик нет активной брони!");
+                ConsoleTheme.WriteInfo("Сначала создайте бронирование на этот столик в Системе бронирования.");
+
+                var activeBooking = Booking.GetActiveBookingForTable(tableId);
+                if (activeBooking == null)
+                {
+                    ConsoleTheme.WriteInfo($"На столик {tableId} сейчас нет активных бронирований.");
+                }
+                return;
+            }
+
+            // Показываем информацию об активной брони
+            var booking = Booking.GetActiveBookingForTable(tableId);
+            ConsoleTheme.WriteSuccess($"✓ Найдена активная бронь: {booking.ClientName} ({booking.Phone})");
+            ConsoleTheme.WriteInfo($"  Время брони: {booking.TimeStart:HH:mm} - {booking.TimeEnd:HH:mm}");
 
             ConsoleTheme.WritePrompt("ID официанта: ");
             if (!int.TryParse(Console.ReadLine(), out int waiterId) || waiterId <= 0)
