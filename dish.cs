@@ -1,13 +1,13 @@
+﻿using RestaurantManagementSystem;
 using System;
 using System.Collections.Generic;
 
-
-namespace DishClass
+namespace RestaurantManagementSystem
 {
     //enum категория для блюд
     public enum DishCategory
     {
-        Напитки, 
+        Напитки,
         Салаты,
         ХолодныеЗакуски,
         ГорячиеЗакуски,
@@ -17,7 +17,7 @@ namespace DishClass
     }
 
 
-    class Dish
+    public class Dish
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -60,14 +60,19 @@ namespace DishClass
         //показать инфу
         public void ShowInfo()
         {
-            Console.WriteLine($"ID заказа: {ID}");
-            Console.WriteLine($"Название: {Name}");
-            Console.WriteLine($"Вес: {Weight}");
-            Console.WriteLine($"Цена:{Price}");
-            Console.WriteLine($"Категория: {Category}");
-            Console.WriteLine($"Время приготовления : {CookingTime}");
-            Console.WriteLine($"Типы: {string.Join(",", Types)}");
-            Console.WriteLine("------------------------");
+            ConsoleTheme.DrawCard(
+                $"Блюдо {ID:00}",
+                new[]
+                {
+                    $"Название: {Name}",
+                    $"Состав: {Compostion}",
+                    $"Вес: {Weight}",
+                    $"Цена: {Price}",
+                    $"Категория: {Category}",
+                    $"Время приготовления: {CookingTime} минут",
+                    $"Типы: {string.Join(", ", Types)}"
+                },
+                ConsoleColor.DarkGreen);
         }
 
         //Удалить заказ
@@ -80,13 +85,18 @@ namespace DishClass
                     // Проверяем, есть ли это блюдо в активном заказе
                     foreach (var item in order.OrderItems)
                     {
-                        if (item.Dish.Id == this.Id)
+                        if (item.Dish.ID == this.ID)
                             return false;
                     }
                 }
             }
             return true;
         }
+
+        private static readonly List<Dish> _allDishes = new List<Dish>();
+
+        public static List<Dish> GetAllDishes() => new List<Dish>(_allDishes);
+        public static void AddDish(Dish dish) => _allDishes.Add(dish);
+        public static Dish FindById(int id) => _allDishes.FirstOrDefault(d => d.ID == id);
     }
 }
-

@@ -1,3 +1,4 @@
+using RestaurantManagementSystem;
 using System;
 using System.Collections.Generic;
 
@@ -18,6 +19,15 @@ namespace RestaurantManagementSystem
             Seats = seats;
             Schedule = new Dictionary<string, Booking>();
             InitializeSchedule();
+        }
+
+        public static List<Table> Tables { get; private set; } = new List<Table>();
+
+        // Инициализация столов
+        public static void InitializeTables(Table[] tables)
+        {
+            Tables.Clear();
+            Tables.AddRange(tables);
         }
 
         // Инициализация расписания (9:00-18:00+)
@@ -41,7 +51,7 @@ namespace RestaurantManagementSystem
         {
             if (HasActiveBookings())
             {
-                Console.WriteLine("Нельзя изменить стол - есть активные брони!");
+                ConsoleTheme.WriteWarning("Нельзя изменить стол — есть активные брони!");
                 return false;
             }
 
@@ -53,22 +63,25 @@ namespace RestaurantManagementSystem
         // Показать информацию о столе с расписанием
         public void ShowTableInfo()
         {
-            Console.WriteLine($"ID: {ID:00}");
-            Console.WriteLine($"Расположение: {Location}");
-            Console.WriteLine($"Количество мест: {Seats}");
-            Console.WriteLine("Расписание:");
-
-            foreach (var timeSlot in Schedule)
+            var lines = new List<string>
             {
-                if (timeSlot.Value == null)
-                {
-                    Console.WriteLine($"{timeSlot.Key} ---------------");
-                }
-                else
-                {
-                    Console.WriteLine($"{timeSlot.Key} ID {timeSlot.Value.ClientId}, {timeSlot.Value.ClientName}, {timeSlot.Value.Phone}");
-                }
+                $"Расположение: {Location}",
+                $"Количество мест: {Seats}",
+                string.Empty,
+                "Расписание (09:00 – 19:00):"
+            };
+
+            foreach (var slot in Schedule)
+            {
+                bool isFree = slot.Value == null;
+                string status = isFree
+                    ? "Свободно"
+                    : $"Занято: {slot.Value.ClientName} ({slot.Value.Phone})";
+
+                lines.Add($"  {slot.Key,-13} | {status}");
             }
+
+            ConsoleTheme.DrawCard($"Стол {ID:00}", lines);
         }
 
         // Проверить, есть ли активные брони
