@@ -15,6 +15,9 @@ namespace RestaurantManagementSystem
         public string Comment { get; set; }
         public Table Table { get; set; }
 
+        // Связь с заказом
+        public Order LinkedOrder { get; set; }
+
         private static readonly List<Booking> _bookings = new List<Booking>();
 
         public static Booking CreateBooking(
@@ -28,6 +31,13 @@ namespace RestaurantManagementSystem
         {
             if (table == null)
                 throw new ArgumentNullException(nameof(table));
+
+            // Проверка времени работы ресторана (9:00-23:00)
+            if (timeStart.Hour < 9 || timeEnd.Hour > 23)
+            {
+                throw new InvalidOperationException(
+                    $"Ресторан работает с 09:00 до 23:00. Выберите время в этом диапазоне.");
+            }
 
             // Проверка пересечения бронирований для этого стола
             foreach (var b in _bookings)
@@ -46,9 +56,14 @@ namespace RestaurantManagementSystem
                 TimeStart = timeStart,
                 TimeEnd = timeEnd,
                 Comment = comment,
-                Table = table
+                Table = table,
+                LinkedOrder = null
             };
             _bookings.Add(booking);
+
+            // Добавляем бронь в расписание стола
+            table.AddBooking(booking);
+
             return booking;
         }
 
@@ -65,57 +80,15 @@ namespace RestaurantManagementSystem
             }
         }
 
-        /*public void EditBooking(
-            string clientName = null,
-            string phone = null,
-            DateTime? timeStart = null,
-            DateTime? timeEnd = null,
-            string comment = null,
-            Table newTable = null)
-        {
-            var old = new Booking
-            {
-                ClientId = ClientId,
-                ClientName = ClientName,
-                Phone = Phone,
-                TimeStart = TimeStart,
-                TimeEnd = TimeEnd,
-                Comment = Comment,
-                Table = Table
-            };
-
-            _bookings.Remove(this);
-            try
-            {
-                if (clientName != null) ClientName = clientName;
-                if (phone != null) Phone = phone;
-                if (timeStart.HasValue) TimeStart = timeStart.Value;
-                if (timeEnd.HasValue) TimeEnd = timeEnd.Value;
-                if (comment != null) Comment = comment;
-                if (newTable != null) Table = newTable;
-
-                // Проверка конфликтов
-                foreach (var b in _bookings)
-                {
-                    if (b.Table == Table && TimeStart < b.TimeEnd && TimeEnd > b.TimeStart)
-                    {
-                        throw new InvalidOperationException(
-                            $"Конфликт: {b.ClientName} уже забронировал столик {Table.ID} в это время.");
-                    }
-                }
-
-                _bookings.Add(this);
-                Console.WriteLine($"Бронь обновлена для {ClientName}");
-            }
-            catch
-            {
-                _bookings.Add(old);
-                throw;
-            }
-        }*/
-
         public void CancelBooking()
         {
+            // Проверяем, есть ли связанный заказ
+            if (LinkedOrder != null && !LinkedOrder.IsClosed)
+            {
+                ConsoleTheme.WriteWarning($"Невозможно отменить бронь - к ней привязан активный заказ #{LinkedOrder.OrderId}. Сначала закройте заказ.");
+                return;
+            }
+
             Table?.RemoveBooking(this);
             if (_bookings.Remove(this))
             {
@@ -142,21 +115,73 @@ namespace RestaurantManagementSystem
                     ? $"{booking.Table.ID:00} ({booking.Table.Location})"
                     : "Не назначен";
 
+                string orderInfo = booking.LinkedOrder != null
+                    ? $"Заказ #{booking.LinkedOrder.OrderId} ({(booking.LinkedOrder.IsClosed ? "Закрыт" : "Активен")})"
+                    : "Заказ не создан";
+
                 var lines = new List<string>
                 {
                     $"Клиент: {booking.ClientName}",
                     $"Телефон: {booking.Phone}",
                     $"Стол: {tableInfo}",
                     $"Время: {booking.TimeStart:dd.MM HH:mm} – {booking.TimeEnd:HH:mm}",
+                    $"Статус: {orderInfo}",
                     $"Комментарий: {(string.IsNullOrWhiteSpace(booking.Comment) ? "—" : booking.Comment)}"
                 };
 
                 ConsoleTheme.DrawCard($"Бронь #{booking.ClientId}", lines, ConsoleColor.DarkMagenta);
             }
         }
+
         public static List<Booking> GetAllBookings() => new List<Booking>(_bookings);
 
-        // Проверка наличия активной брони на столике в текущее время
+        // Проверка наличия брони на столик (активной сейчас ИЛИ будущей)
+        public static bool HasActiveOrUpcomingBookingForTable(int tableId)
+        {
+            DateTime now = DateTime.Now;
+            foreach (var booking in _bookings)
+            {
+                // Бронь либо уже активна, либо начнётся в будущем (но не закончилась)
+                if (booking.Table.ID == tableId && booking.TimeEnd > now)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Получить бронь для столика (активную или ближайшую будущую)
+        public static Booking GetActiveOrUpcomingBookingForTable(int tableId)
+        {
+            DateTime now = DateTime.Now;
+
+            // Сначала ищем активную бронь (сейчас)
+            foreach (var booking in _bookings)
+            {
+                if (booking.Table.ID == tableId &&
+                    booking.TimeStart <= now &&
+                    booking.TimeEnd > now)
+                {
+                    return booking;
+                }
+            }
+
+            // Если активной нет, ищем ближайшую будущую
+            Booking nearestBooking = null;
+            foreach (var booking in _bookings)
+            {
+                if (booking.Table.ID == tableId &&
+                    booking.TimeStart > now &&
+                    (nearestBooking == null || booking.TimeStart < nearestBooking.TimeStart))
+                {
+                    nearestBooking = booking;
+                }
+            }
+
+            return nearestBooking;
+        }
+
+        // Проверка наличия активной брони на столике ТОЛЬКО в текущее время
         public static bool HasActiveBookingForTable(int tableId)
         {
             DateTime now = DateTime.Now;
@@ -172,7 +197,7 @@ namespace RestaurantManagementSystem
             return false;
         }
 
-        // Получить активную бронь для столика (если есть)
+        // Получить активную бронь для столика (только если активна СЕЙЧАС)
         public static Booking GetActiveBookingForTable(int tableId)
         {
             DateTime now = DateTime.Now;
@@ -186,6 +211,16 @@ namespace RestaurantManagementSystem
                 }
             }
             return null;
+        }
+
+        // Связать заказ с бронью
+        public void LinkOrder(Order order)
+        {
+            if (LinkedOrder != null && !LinkedOrder.IsClosed)
+            {
+                throw new InvalidOperationException($"К этой брони уже привязан активный заказ #{LinkedOrder.OrderId}");
+            }
+            LinkedOrder = order;
         }
     }
 }

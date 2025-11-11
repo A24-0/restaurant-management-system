@@ -458,10 +458,10 @@ namespace RestaurantManagementSystem
                 start = start.Date.AddHours(start.Hour); // обрезаем минуты
                 DateTime end = start.AddHours(hours);
 
-                // Проверка: столы работают с 9:00 до 19:00 (18:00-19:00 последний слот)
-                if (start.Hour < 9 || end.Hour > 19 || start.Hour >= end.Hour)
+                // Проверка: столы работают с 9:00 до 23:00
+                if (start.Hour < 9 || end.Hour > 23 || start.Hour >= end.Hour)
                 {
-                    ConsoleTheme.WriteWarning("Ресторан работает с 9:00 до 19:00. Бронирование должно укладываться в это время.");
+                    ConsoleTheme.WriteWarning("Ресторан работает с 9:00 до 23:00. Бронирование должно укладываться в это время.");
                     return;
                 }
 
@@ -690,12 +690,12 @@ namespace RestaurantManagementSystem
             }
 
             // Проверка наличия активной брони на столик
-            if (!Booking.HasActiveBookingForTable(tableId))
+            if (!Booking.HasActiveOrUpcomingBookingForTable(tableId))
             {
                 ConsoleTheme.WriteError("❌ Нельзя создать заказ: на столик нет активной брони!");
                 ConsoleTheme.WriteInfo("Сначала создайте бронирование на этот столик в Системе бронирования.");
 
-                var activeBooking = Booking.GetActiveBookingForTable(tableId);
+                var activeBooking = Booking.GetActiveOrUpcomingBookingForTable(tableId);
                 if (activeBooking == null)
                 {
                     ConsoleTheme.WriteInfo($"На столик {tableId} сейчас нет активных бронирований.");
@@ -704,7 +704,7 @@ namespace RestaurantManagementSystem
             }
 
             // Показываем информацию об активной брони
-            var booking = Booking.GetActiveBookingForTable(tableId);
+            var booking = Booking.GetActiveOrUpcomingBookingForTable(tableId);
             ConsoleTheme.WriteSuccess($"✓ Найдена активная бронь: {booking.ClientName} ({booking.Phone})");
             ConsoleTheme.WriteInfo($"  Время брони: {booking.TimeStart:HH:mm} - {booking.TimeEnd:HH:mm}");
 
@@ -718,7 +718,7 @@ namespace RestaurantManagementSystem
             ConsoleTheme.WritePrompt("Комментарий (можно оставить пустым): ");
             string comment = Console.ReadLine()?.Trim() ?? "";
 
-            var order = Order.CreateOrder(_nextOrderId++, tableId, waiterId, comment);
+            var order = Order.CreateOrder(_nextOrderId++, tableId, waiterId, booking, comment);
             _orders.Add(order);
 
             ConsoleTheme.WriteSuccess($"Заказ #{order.OrderId} успешно создан для столика {tableId}.");
