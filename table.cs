@@ -30,10 +30,10 @@ namespace RestaurantManagementSystem
             Tables.AddRange(tables);
         }
 
-        // Инициализация расписания (9:00-18:00+)
+        // Инициализация расписания (9:00-23:00)
         private void InitializeSchedule()
         {
-            for (int hour = 9; hour <= 18; hour++)
+            for (int hour = 9; hour <= 22; hour++)
             {
                 string timeSlot = $"{hour:00}:00-{hour + 1:00}:00";
                 Schedule[timeSlot] = null;
@@ -68,7 +68,7 @@ namespace RestaurantManagementSystem
                 $"Расположение: {Location}",
                 $"Количество мест: {Seats}",
                 string.Empty,
-                "Расписание (09:00 – 19:00):"
+                "Расписание (09:00 – 23:00):"
             };
 
             foreach (var slot in Schedule)
